@@ -1,14 +1,13 @@
-// TODO: add another for MemWr stage
-module IREGUSAGE(ExRd, ExWb, WbRd, WbWb, ExRdOut, WbRdOut);
-    input [4:0] ExRd, WbRd;
-    input ExWb, WbWb;
-    output reg [31:0] ExRdOut, WbRdOut;
+module IREGUSAGE(ExRd, ExWb, MemRd, MemWb, WbRd, WbWb, ExRdOut, MemRdOut, WbRdOut);
+    input [4:0] ExRd, MemRd, WbRd;
+    input ExWb, MemWb, WbWb;
+    output reg [31:0] ExRdOut, MemRdOut, WbRdOut;
    
     always @(ExRd or ExWb)
     begin
         if (ExWb == 1)
             case (ExRd)
-                0 : ExRdOut <= 1<<0;
+                0 : ExRdOut <= 0;
                 1 : ExRdOut <= 1<<1 ;
                 2 : ExRdOut <= 1<<2 ;
                 3 : ExRdOut <= 1<<3 ;
@@ -45,11 +44,52 @@ module IREGUSAGE(ExRd, ExWb, WbRd, WbWb, ExRdOut, WbRdOut);
             ExRdOut <= 0;
     end
 
+    always @(MemRd or MemWb)
+    begin
+        if (MemWb == 1)
+            case (MemRd)
+                0 : MemRdOut <= 0;
+                1 : MemRdOut <= 1<<1 ;
+                2 : MemRdOut <= 1<<2 ;
+                3 : MemRdOut <= 1<<3 ;
+                4 : MemRdOut <= 1<<4 ;
+                5 : MemRdOut <= 1<<5 ;
+                6 : MemRdOut <= 1<<6 ;
+                7 : MemRdOut <= 1<<7 ;
+                8 : MemRdOut <= 1<<8 ;
+                9 : MemRdOut <= 1<<9 ;
+                10: MemRdOut <= 1<<10;
+                11: MemRdOut <= 1<<11;
+                12: MemRdOut <= 1<<12;
+                13: MemRdOut <= 1<<13;
+                14: MemRdOut <= 1<<14;
+                15: MemRdOut <= 1<<15;
+                16: MemRdOut <= 1<<16;
+                17: MemRdOut <= 1<<17;
+                18: MemRdOut <= 1<<18;
+                19: MemRdOut <= 1<<19;
+                20: MemRdOut <= 1<<20;
+                21: MemRdOut <= 1<<21;
+                22: MemRdOut <= 1<<22;
+                23: MemRdOut <= 1<<23;
+                24: MemRdOut <= 1<<24;
+                25: MemRdOut <= 1<<25;
+                26: MemRdOut <= 1<<26;
+                27: MemRdOut <= 1<<27;
+                28: MemRdOut <= 1<<28;
+                29: MemRdOut <= 1<<29;
+                30: MemRdOut <= 1<<30;
+                31: MemRdOut <= 1<<31;
+            endcase
+        else
+            MemRdOut <= 0;
+    end
+
     always @(WbRd or WbWb)
     begin
         if (WbWb == 1)
             case (WbRd)
-                0 : WbRdOut <= 1<<0;
+                0 : WbRdOut <= 0;
                 1 : WbRdOut <= 1<<1 ;
                 2 : WbRdOut <= 1<<2 ;
                 3 : WbRdOut <= 1<<3 ;
@@ -86,5 +126,4 @@ module IREGUSAGE(ExRd, ExWb, WbRd, WbWb, ExRdOut, WbRdOut);
             WbRdOut <= 0;
     end
 
-    //TODO: Add another case for MemWr
 endmodule

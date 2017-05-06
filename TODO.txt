@@ -1,0 +1,13 @@
+-     always @(Op2 or SA)
+    begin
+        if (op_shiftr == 1)
+            shiftr_result <= Op2 >> SA;
+        else
+            shiftr_result <= 0;
+    end
+    
+Done. Actually caused a problem with shifts -- A test like the previous one seems to change only when Op2 or SA changes but not when op_shifter changes. Could that lead to an error when two consecutive instructions have the same Op2 / SA (or Op1/Op2 for other instructions) but only the operator changes?
+
+- Write After Read Hazards (since this is a register Hazard, I think it's already handled)
+- Read After Write Hazards (since both happen in the Mem Stage, I think we're covered)
+- Based on the simplistic Write strobe control using only one clock, you can't have two stores in a row

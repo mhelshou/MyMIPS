@@ -8,7 +8,7 @@ module MIPS_TEST();
     reg clk, reset;
     
     wire [31:0] iaddr, cpu_iaddr, inst, cpu_inst, daddr, data;
-    wire        iread, iwrite, cpu_iread, cpu_iwrite, dread, dwrite;
+    wire        iread, iwrite, cpu_iread, cpu_iwrite, dread, dwrite, cpu_oe;
 
     integer i, data_file, scan_file;
     reg [31:0] testaddr, pgm_inst;
@@ -18,7 +18,7 @@ module MIPS_TEST();
     always #5 clk = ~clk;
     
     
-    MIPS_CPU CPU(reset, clk, cpu_iaddr, cpu_inst, cpu_iread, cpu_iwrite, daddr, data, dread, dwrite);
+    MIPS_CPU CPU(reset, clk, cpu_iaddr, cpu_inst, cpu_iread, cpu_iwrite, daddr, data, dread, dwrite, cpu_oe);
     
     assign iaddr = test_override? testaddr:cpu_iaddr;
     assign cpu_inst = inst;
@@ -27,7 +27,7 @@ module MIPS_TEST();
     assign iread = test_override?1:cpu_iread;
 
     RAM IRAM(iaddr, inst, iread, iwrite, OE);
-    //RAM DRAM(daddr, data, dread, dwrite);
+    RAM DRAM(daddr, data, dread, dwrite, cpu_oe);
 
     initial begin
         clk <= 0;
@@ -49,12 +49,13 @@ module MIPS_TEST();
         
         #10 reset <= 0;        
 
-        #1000 for (i=0; i<32; i=i+1) 
+        #2000 for (i=0; i<32; i=i+1) 
                 if (i==0)
                     $display("Register R%d = 0x%x", i, 32'b0);
                 else
                     $display("Register R%d = 0x%x", i, CPU.cpureg[i]);
-        
+        #1000 for(i=0; i<16; i=i+1)
+                $display("Memory Address %02x = %d", i*4, DRAM.ramcells[i]);
         #10 $finish;
         
     end

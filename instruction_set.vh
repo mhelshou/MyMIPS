@@ -44,6 +44,11 @@
 `define ORI     6'b001101
 `define ADDI    6'b001000
 `define ADDIU   6'b001001
+`define ANDI    6'b001100
+
+// Load/Store Opcodes
+`define LW		6'b100011
+`define SW		6'b101011
 
 // Control Operations
 `define OP_UNSIGNED (1<<0)
@@ -60,6 +65,9 @@
 `define OP_SHIFTR   (1<<10)
 `define OP_SHFAR    (1<<11)
 `define OP_SHFVAR   (1<<12)
+
+`define OP_LOAD		(1<<13)
+`define OP_STORE	(1<<14)
 
 // Assembly Instructions
 // Arithmetic

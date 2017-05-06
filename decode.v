@@ -1,13 +1,13 @@
 `include "instruction_set.vh"
 
-module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdWb, Op1, Op2, Dst, SA, Control, Stall);
+module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdMem, RdWb, Op1, Op2, Dst, SA, StoreVal, Control, Stall);
     input Reset, Clk;
     input [31:0] Instruction;
     input [1023:0] Regfile_flat;
-    input [31:0] RdEx, RdWb;
+    input [31:0] RdEx, RdMem, RdWb;
     output reg [31:0] Op1, Op2;
     output reg [4:0] Dst, SA;
-    output reg [31:0] Control;
+    output reg [31:0] StoreVal, Control;
     output Stall;
     
     wire [5:0] opcode, opfunction;
@@ -63,11 +63,18 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdWb, Op1, Op2, Dst,
                             
                             inst_type <= `REGINST;
                         end
+						
+			// Immediate Instructions
             `LUI:       begin control_sig <= `OP_SHIFTL;                inst_type <= `IMMINST; end
             `ORI:       begin control_sig <= `OP_OR;                    inst_type <= `IMMINST; end
             `ADDI:      begin control_sig <= `OP_ADD;                   inst_type <= `IMMINST; end
             `ADDIU:     begin control_sig <= `OP_ADD | `OP_UNSIGNED;    inst_type <= `IMMINST; end
+            `ANDI:      begin control_sig <= `OP_AND;                   inst_type <= `IMMINST; end
             
+			// Load Store Instructions
+			`LW:		begin control_sig <= `OP_LOAD;					inst_type <= `IMMINST; end
+			`SW:		begin control_sig <= `OP_STORE;					inst_type <= `IMMINST; end
+			
             default:    begin control_sig <= 0; inst_type <= `REGINST; end
         endcase
     end
@@ -93,7 +100,7 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdWb, Op1, Op2, Dst,
         if (inst_type == `REGINST)
             dst_reg <= rd;
         else if (inst_type == `IMMINST)
-            dst_reg <= rt;
+			dst_reg <= rt;
         else
             dst_reg <= rt;
     end
@@ -127,7 +134,7 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdWb, Op1, Op2, Dst,
                             if (inst_type == `IMMINST)
                                 begin
                                     Op2 <= immediate;
-                                    Control [31] <= (rt==0)?0:1;  // WriteBack Reg
+                                    Control [31] <= ( (rt == 0) | (control_sig == `OP_STORE))?0:1;  // WriteBack Reg
                                     Dst <= dst_reg;
                                 end
                             else
@@ -140,6 +147,11 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdWb, Op1, Op2, Dst,
             end
     end
     
-    assign stall_sig = RdEx[rs] | RdEx[rt] | RdWb[rs] | RdWb[rt];
+	always @(posedge Clk)
+	begin
+		StoreVal <= rt_val;
+	end
+	
+    assign stall_sig = RdEx[rs] | RdEx[rt] | RdMem[rs] | RdMem[rt] | RdWb[rs] | RdWb[rt];
     assign Stall = stall_sig;
 endmodule
