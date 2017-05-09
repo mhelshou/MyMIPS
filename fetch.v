@@ -1,9 +1,9 @@
 // The Fetch module is simple, it either latches the output of the IRAM or outputs NOPs in case of a stall
 
-module IFETCH(Reset, Clk, Inst, Stall, IRead, Fetched, Flush);
+module IFETCH(Reset, Clk, Inst, Stall, BranchTaken, IRead, Fetched, Flush);
     input Reset, Clk;
     input [31:0] Inst;
-    input Stall;
+    input Stall, BranchTaken;
     output IRead;
     output reg [31:0] Fetched;
     output reg Flush;
@@ -39,7 +39,7 @@ module IFETCH(Reset, Clk, Inst, Stall, IRead, Fetched, Flush);
 
     always @ (posedge Clk)
     begin
-        if ( (Reset == 1) | (Flush == 1) )
+        if ( (Reset == 1) | (Flush == 1) | BranchTaken)
             Fetched <= 0;
         else if(Stall == 0)
             Fetched <= iread;

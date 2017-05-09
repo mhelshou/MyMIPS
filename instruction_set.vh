@@ -50,6 +50,10 @@
 `define LW		6'b100011
 `define SW		6'b101011
 
+// Branch Opcodes
+`define BE      6'b000100
+`define BNE     6'b000101
+
 // Control Operations
 `define OP_UNSIGNED (1<<0)
 `define OP_ADD      (1<<1)
@@ -68,6 +72,10 @@
 
 `define OP_LOAD		(1<<13)
 `define OP_STORE	(1<<14)
+
+`define OP_BRANCH   (1<<15)
+`define OP_CMPEQ    (1<<16)
+`define OP_COMPCOND (1<<17)
 
 // Assembly Instructions
 // Arithmetic

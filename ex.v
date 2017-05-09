@@ -1,17 +1,21 @@
 `include "instruction_set.vh"
 
-module IEX(Reset, Clk, Op1, Op2, DstIn, SA, StoreValIn, Control, DstOut, Result, WriteBack, ExStoreValOut, isMemRead, isMemWrite);
+module IEX(Reset, Clk, Op1, Op2, Op3, DstIn, SA, Control, NextPCIn, DstOut, Result, WriteBack, ExStoreValOut, isMemRead, isMemWrite, BranchTaken, BranchTarget);
     input Reset, Clk;
     input [4:0] DstIn, SA;
-    input [31:0] Op1, Op2, StoreValIn, Control;
+    input [31:0] Op1, Op2, Op3, Control, NextPCIn;
     output reg [4:0] DstOut;
-    output reg [31:0] Result, ExStoreValOut;
+    output reg [31:0] Result, ExStoreValOut, BranchTarget;
     output reg WriteBack, isMemRead, isMemWrite;
+    output BranchTaken;
     
     wire op_add, op_sub, op_mult, op_div, op_and, op_or, op_nor, op_xor, op_shiftl, op_shiftr;  // Control
 	wire op_memread, op_memwrite; // Memory
     wire op_unsigned, op_shiftar; // Overrides
+    wire condition_true;
+    
     reg  [31:0] add_result, sub_result, mult_result, div_result, and_result, or_result, nor_result, xor_result, shiftl_result, shiftr_result, mem_addr;
+    reg  cmpeq_true;
     
     assign op_add       = Control[1];
     assign op_sub       = Control[2];
@@ -30,6 +34,13 @@ module IEX(Reset, Clk, Op1, Op2, DstIn, SA, StoreValIn, Control, DstOut, Result,
 	assign op_memread	= Control[13];
 	assign op_memwrite	= Control[14];
 
+    assign op_branch    = Control[15];
+    assign op_cmpeq     = Control[16];
+    assign op_compcond  = Control[17];
+    
+    assign condition_true = op_compcond ^ cmpeq_true; // TODO: add more conditions
+    assign BranchTaken = op_branch & condition_true;
+    
     // Adder
     always @(Op1 or Op2 or op_add)
     begin
@@ -120,15 +131,30 @@ module IEX(Reset, Clk, Op1, Op2, DstIn, SA, StoreValIn, Control, DstOut, Result,
             shiftr_result <= 0;
     end
     
+    // Comparison
+    always @(Op1 or Op3 or op_cmpeq)
+    begin
+        if (op_cmpeq == 1)
+            cmpeq_true <= (Op1 == Op3)?1:0;
+        else
+            cmpeq_true <= 0;
+    end
+
 	// Memory
 	always @(Op1 or Op2 or op_memread or op_memwrite)
 	begin
 		if (op_memread | op_memwrite)
-			mem_addr <= Op1 + {Op2[15]?16'b1111111111111111:16'b0, Op2}; // Add base to sign-extended immediate
+			mem_addr <= Op1 + {Op2[15]?16'b1111111111111111:16'b0, Op2[15:0]}; // Add base to sign-extended immediate
 		else
 			mem_addr <= 0;
 	end
 	
+    // Branch Target Calculation
+    always @(NextPCIn or Op2)
+    begin
+        BranchTarget <= NextPCIn + {Op2[15]?14'b11111111111111:14'b0, Op2[15:0], 2'b00};
+    end
+    
     always @(posedge Clk)
     begin
         if (Reset == 1)
@@ -142,7 +168,7 @@ module IEX(Reset, Clk, Op1, Op2, DstIn, SA, StoreValIn, Control, DstOut, Result,
                 Result      	<= add_result | sub_result | mult_result | div_result | and_result | or_result | nor_result | xor_result | shiftl_result | shiftr_result | mem_addr;
                 DstOut      	<= DstIn;
                 WriteBack   	<= Control[31];
-				ExStoreValOut	<= StoreValIn;
+				ExStoreValOut	<= Op3;
 				isMemRead		<= op_memread;
 				isMemWrite 		<= op_memwrite;
             end

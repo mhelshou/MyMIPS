@@ -1,14 +1,18 @@
 `include "instruction_set.vh"
 
-module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdMem, RdWb, Op1, Op2, Dst, SA, StoreVal, Control, Stall);
+module IDECODE(Reset, Clk, Instruction, Regfile_flat, NextPCIn, RdEx, RdMem, RdWb, BranchTaken, Op1, Op2, Op3, Dst, SA, Control, Stall, NextPCOut, UnconditionalBranch, UnconditionalBranchTarget);
     input Reset, Clk;
     input [31:0] Instruction;
     input [1023:0] Regfile_flat;
+    input [31:0] NextPCIn;
     input [31:0] RdEx, RdMem, RdWb;
-    output reg [31:0] Op1, Op2;
+    input BranchTaken;
+    output reg [31:0] Op1, Op2, Op3;
     output reg [4:0] Dst, SA;
-    output reg [31:0] StoreVal, Control;
+    output reg [31:0] Control, NextPCOut;
     output Stall;
+    output UnconditionalBranch;
+    output [31:0] UnconditionalBranchTarget;
     
     wire [5:0] opcode, opfunction;
     wire [4:0] rs, rt, rd, sa;
@@ -17,7 +21,7 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdMem, RdWb, Op1, Op
     wire [31:0] regfile [0:31];
     reg  [1:0] inst_type;
     reg  [30:0] control_sig;
-    wire op_shfvar, stall_sig;
+    wire op_shfvar, op_branch, stall_sig;
     reg  [4:0] dst_reg;
     
     assign { regfile[0], regfile[1], regfile[2], regfile[3], regfile[4], regfile[5], regfile[6], regfile[7], regfile[8], regfile[9], regfile[10], regfile[11], regfile[12], regfile[13], regfile[14], regfile[15], regfile[16], regfile[17], regfile[18], regfile[19], regfile[20], regfile[21], regfile[22], regfile[23], regfile[24], regfile[25], regfile[26], regfile[27], regfile[28], regfile[29], regfile[30], regfile[31]} = Regfile_flat;
@@ -34,6 +38,7 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdMem, RdWb, Op1, Op
     assign rs_val = regfile[rs];
     assign rt_val = regfile[rt];
     assign op_shfvar = control_sig[12];
+    assign op_branch = control_sig[15];
     
     always @ (opcode or opfunction)
     begin
@@ -75,6 +80,10 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdMem, RdWb, Op1, Op
 			`LW:		begin control_sig <= `OP_LOAD;					inst_type <= `IMMINST; end
 			`SW:		begin control_sig <= `OP_STORE;					inst_type <= `IMMINST; end
 			
+            // Branch Instructions
+            `BE:        begin control_sig <= `OP_BRANCH | `OP_CMPEQ; 	            inst_type <= `IMMINST; end
+            `BNE:       begin control_sig <= `OP_BRANCH | `OP_CMPEQ | `OP_COMPCOND; inst_type <= `IMMINST; end
+            
             default:    begin control_sig <= 0; inst_type <= `REGINST; end
         endcase
     end
@@ -121,20 +130,20 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdMem, RdWb, Op1, Op
                     Control <= 0;
                 else
                     begin
-                        Control[30:0] <= control_sig;
+                        Control[30:0] <= BranchTaken?0:control_sig;
                         
                         Op1 <= rs_val;
                         if (inst_type == `REGINST)
                             begin
                                 Op2 <= rt_val;
-                                Control [31] <= (rd==0)?0:1;  // WriteBack Reg
+                                Control [31] <= !op_branch & !BranchTaken & ((rd==0)?0:1);  // WriteBack Reg
                                 Dst <= dst_reg;
                             end
                         else
                             if (inst_type == `IMMINST)
                                 begin
                                     Op2 <= immediate;
-                                    Control [31] <= ( (rt == 0) | (control_sig == `OP_STORE))?0:1;  // WriteBack Reg
+                                    Control [31] <= !op_branch & !BranchTaken & ( (rt == 0) | (control_sig == `OP_STORE) | (control_sig == `OP_BRANCH)?0:1);  // WriteBack Reg
                                     Dst <= dst_reg;
                                 end
                             else
@@ -149,9 +158,11 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, RdEx, RdMem, RdWb, Op1, Op
     
 	always @(posedge Clk)
 	begin
-		StoreVal <= rt_val;
+		Op3 <= rt_val;
+        NextPCOut <= NextPCIn;
 	end
 	
     assign stall_sig = RdEx[rs] | RdEx[rt] | RdMem[rs] | RdMem[rt] | RdWb[rs] | RdWb[rt];
     assign Stall = stall_sig;
+    assign UnconditionalBranch = 0; // !Reset & Uncon branch detected
 endmodule

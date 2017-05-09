@@ -49,7 +49,7 @@ module MIPS_TEST();
         
         #10 reset <= 0;        
 
-        #2000 for (i=0; i<32; i=i+1) 
+        #4000 for (i=0; i<32; i=i+1) 
                 if (i==0)
                     $display("Register R%d = 0x%x", i, 32'b0);
                 else

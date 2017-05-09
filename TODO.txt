@@ -11,3 +11,4 @@ Done. Actually caused a problem with shifts -- A test like the previous one seem
 - Write After Read Hazards (since this is a register Hazard, I think it's already handled)
 - Read After Write Hazards (since both happen in the Mem Stage, I think we're covered)
 - Based on the simplistic Write strobe control using only one clock, you can't have two stores in a row
+- Control of writeback could be handled better. Perhaps having that flag being set with every instruction, rather than putting so many comparators
