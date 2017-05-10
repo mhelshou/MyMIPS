@@ -3,7 +3,7 @@
 // Types
 `define REGINST 2'b01
 `define IMMINST 2'b10
-`define BRAINST 2'b11
+`define JMPINST 2'b11
 
 // NOP
 `define NOP     0
@@ -53,6 +53,9 @@
 // Branch Opcodes
 `define BE      6'b000100
 `define BNE     6'b000101
+
+// Jump Instructions
+`define J       6'b000010
 
 // Control Operations
 `define OP_UNSIGNED (1<<0)

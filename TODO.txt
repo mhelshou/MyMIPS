@@ -12,3 +12,5 @@ Done. Actually caused a problem with shifts -- A test like the previous one seem
 - Read After Write Hazards (since both happen in the Mem Stage, I think we're covered)
 - Based on the simplistic Write strobe control using only one clock, you can't have two stores in a row
 - Control of writeback could be handled better. Perhaps having that flag being set with every instruction, rather than putting so many comparators
+- Develop a better rule for ports and signal naming and rewrite in a less confusing manner
+- You can support branch delay slots if you let BranchTaken from Ex go only to the fectch not decode. 

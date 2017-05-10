@@ -84,6 +84,9 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, NextPCIn, RdEx, RdMem, RdW
             `BE:        begin control_sig <= `OP_BRANCH | `OP_CMPEQ; 	            inst_type <= `IMMINST; end
             `BNE:       begin control_sig <= `OP_BRANCH | `OP_CMPEQ | `OP_COMPCOND; inst_type <= `IMMINST; end
             
+            // Jump Instructions
+            `J:         begin control_sig <= 0;                                     inst_type <= `JMPINST; end
+            
             default:    begin control_sig <= 0; inst_type <= `REGINST; end
         endcase
     end
@@ -130,20 +133,20 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, NextPCIn, RdEx, RdMem, RdW
                     Control <= 0;
                 else
                     begin
-                        Control[30:0] <= BranchTaken?0:control_sig;
+                        Control[30:0] <= control_sig;
                         
                         Op1 <= rs_val;
                         if (inst_type == `REGINST)
                             begin
                                 Op2 <= rt_val;
-                                Control [31] <= !op_branch & !BranchTaken & ((rd==0)?0:1);  // WriteBack Reg
+                                Control [31] <= !op_branch & ((rd==0)?0:1);  // WriteBack Reg
                                 Dst <= dst_reg;
                             end
                         else
                             if (inst_type == `IMMINST)
                                 begin
                                     Op2 <= immediate;
-                                    Control [31] <= !op_branch & !BranchTaken & ( (rt == 0) | (control_sig == `OP_STORE) | (control_sig == `OP_BRANCH)?0:1);  // WriteBack Reg
+                                    Control [31] <= !op_branch & ( (rt == 0) | (control_sig == `OP_STORE) | (control_sig == `OP_BRANCH)?0:1);  // WriteBack Reg
                                     Dst <= dst_reg;
                                 end
                             else
@@ -164,5 +167,6 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, NextPCIn, RdEx, RdMem, RdW
 	
     assign stall_sig = RdEx[rs] | RdEx[rt] | RdMem[rs] | RdMem[rt] | RdWb[rs] | RdWb[rt];
     assign Stall = stall_sig;
-    assign UnconditionalBranch = 0; // !Reset & Uncon branch detected
+    assign UnconditionalBranch = (inst_type==`JMPINST)?1:0; // !Reset & Uncon branch detected
+    assign UnconditionalBranchTarget = {4'b0, Instruction[25:0], 2'b00};
 endmodule

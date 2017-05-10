@@ -7,11 +7,34 @@
 #define count $5
 #define one  $6
 asmtest:
+delay_slot_test:
+    lui     $1, 0x1234
+    ori     $1, 0x5678
+    bne     $1, $0, take_branch
+    lui     $2, 0xAAAA
+    ori     $2, 0xBBBB
+take_branch:
+    lui     $3, 0xABCD
+    ori     $3, 0xEF01
+
+uncond_jump_test:
+    lui     $1, 0x1234
+    ori     $1, 0x5678
+    j       j2
+    nop
+j2:
+    lui     $2, 0xABCD
+    ori     $2, 0xEF01
+j1:
+    lui     $3, 0xAAAA
+    ori     $3, 0xBBBB
+
 decimal_to_bin_loop:
     #lui     base, 0xA000
     #addi    base, 0x1000
     addi    base, $0, 0
-    addi    val, $0, 0xABCD
+    addiu    val, $0, 0xABCD
+    clo     res, val
     addi    count, $0, 16
     addi    one, $0, 1
 repeat:
