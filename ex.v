@@ -9,13 +9,13 @@ module IEX(Reset, Clk, Op1, Op2, Op3, DstIn, SA, Control, NextPCIn, DstOut, Resu
     output reg WriteBack, isMemRead, isMemWrite;
     output BranchTaken;
     
-    wire op_add, op_sub, op_mult, op_div, op_and, op_or, op_nor, op_xor, op_shiftl, op_shiftr;  // Control
+    wire op_add, op_sub, op_mult, op_div, op_and, op_or, op_nor, op_xor, op_shiftl, op_shiftr, op_testneg, op_testpos, op_testz, op_testnz;  // Control
 	wire op_memread, op_memwrite; // Memory
     wire op_unsigned, op_shiftar; // Overrides
-    wire condition_true;
+    wire condition_true, cmptrue, testtrue, Op1isZero;
     
     reg  [31:0] add_result, sub_result, mult_result, div_result, and_result, or_result, nor_result, xor_result, shiftl_result, shiftr_result, mem_addr;
-    reg  cmpeq_true;
+    reg  cmpeq_true, cmplt_true, cmpgt_true, testneg_true, testpos_true, testz_true, testnz_true;
     
     assign op_add       = Control[1];
     assign op_sub       = Control[2];
@@ -38,8 +38,18 @@ module IEX(Reset, Clk, Op1, Op2, Op3, DstIn, SA, Control, NextPCIn, DstOut, Resu
     assign op_cmpeq     = Control[16];
     assign op_compcond  = Control[17];
     
-    assign condition_true = op_compcond ^ cmpeq_true; // TODO: add more conditions
-    assign BranchTaken = op_branch & condition_true;
+    assign op_jump      = Control[18];
+    
+    assign op_testneg   = Control[19];
+    assign op_testpos   = Control[20];
+    assign op_testz     = Control[21];
+    assign op_testnz    = Control[22];
+    
+    assign cmptrue = cmpeq_true | cmplt_true | cmpgt_true;
+    assign testtrue = testneg_true | testpos_true | testz_true | testnz_true;
+    assign condition_true = op_compcond ^ (cmptrue | testtrue) ;
+    
+    assign BranchTaken = op_jump | (op_branch & condition_true);
     
     // Adder
     always @(Op1 or Op2 or op_add)
@@ -132,12 +142,65 @@ module IEX(Reset, Clk, Op1, Op2, Op3, DstIn, SA, Control, NextPCIn, DstOut, Resu
     end
     
     // Comparison
+    // TODO: These comparison could be done with one subraction unit along with monitoring the carries and sign bit
     always @(Op1 or Op3 or op_cmpeq)
     begin
         if (op_cmpeq == 1)
-            cmpeq_true <= (Op1 == Op3)?1:0;
+            cmpeq_true <= (Op1 == Op3) ?1:0;
         else
             cmpeq_true <= 0;
+    end
+
+    
+//    always @(Op1 or Op3 or op_cmplt)
+//    begin
+//        if (op_cmplt == 1)
+//            cmplt_true <= (Op1 < Op3) ?1:0;
+//        else
+//            cmplt_true <= 0;
+//    end
+//
+//    always @(Op1 or Op3 or op_cmpgt)
+//    begin
+//        if (op_cmpgt == 1)
+//            cmpgt_true <= (Op1 > Op3) ?1:0;
+//        else
+//            cmpgt_true <= 0;
+//    end
+
+    // Tests
+    always @(Op1 or op_testneg)
+    begin
+        if (op_testneg == 1)
+            testneg_true <= !Op1[31];
+        else
+            testneg_true <= 0;
+    end
+
+    always @(Op1 or op_testpos)
+    begin
+        if (op_testpos == 1)
+            testpos_true <= Op1[31];
+        else
+            testpos_true <= 0;
+    end
+
+    assign Op1isZero = (Op1==0)?1:0;
+
+    always @(Op1 or op_testz or Op1isZero)
+    begin
+        if (op_testz == 1)
+            testz_true <= Op1isZero;
+        else
+            testz_true <= 0;
+    end
+
+    always @(Op1 or op_testnz or Op1isZero)
+    begin
+        if (op_testnz == 1)
+            testnz_true <= !Op1isZero;
+        else
+            testnz_true <= 0;
     end
 
 	// Memory
@@ -150,9 +213,12 @@ module IEX(Reset, Clk, Op1, Op2, Op3, DstIn, SA, Control, NextPCIn, DstOut, Resu
 	end
 	
     // Branch Target Calculation
-    always @(NextPCIn or Op2)
+    always @(NextPCIn or Op2 or op_jump)
     begin
-        BranchTarget <= NextPCIn + {Op2[15]?14'b11111111111111:14'b0, Op2[15:0], 2'b00};
+        if(op_jump)
+            BranchTarget <= Op2;
+        else
+            BranchTarget <= NextPCIn + {Op2[15]?14'b11111111111111:14'b0, Op2[15:0], 2'b00};
     end
     
     always @(posedge Clk)

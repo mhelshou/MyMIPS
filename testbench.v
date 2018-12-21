@@ -54,8 +54,8 @@ module MIPS_TEST();
                     $display("Register R%d = 0x%x", i, 32'b0);
                 else
                     $display("Register R%d = 0x%x", i, CPU.cpureg[i]);
-        #1000 for(i=0; i<16; i=i+1)
-                $display("Memory Address %02x = %d", i*4, DRAM.ramcells[i]);
+        //#1000 for(i=0; i<16; i=i+1)
+        //        $display("Memory Address %02x = %d", i*4, DRAM.ramcells[i]);
         #10 $finish;
         
     end

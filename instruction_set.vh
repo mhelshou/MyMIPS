@@ -53,6 +53,7 @@
 // Branch Opcodes
 `define BE      6'b000100
 `define BNE     6'b000101
+`define BGEZ    6'b000001
 
 // Jump Instructions
 `define J       6'b000010
@@ -79,6 +80,13 @@
 `define OP_BRANCH   (1<<15)
 `define OP_CMPEQ    (1<<16)
 `define OP_COMPCOND (1<<17)
+
+`define OP_JUMP     (1<<18)
+
+`define OP_TESTNEG  (1<<19)
+`define OP_TESTPOS  (1<<20)
+`define OP_TESTZ    (1<<21)
+`define OP_TESTNZ   (1<<22)
 
 // Assembly Instructions
 // Arithmetic

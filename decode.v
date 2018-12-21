@@ -83,9 +83,10 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, NextPCIn, RdEx, RdMem, RdW
             // Branch Instructions
             `BE:        begin control_sig <= `OP_BRANCH | `OP_CMPEQ; 	            inst_type <= `IMMINST; end
             `BNE:       begin control_sig <= `OP_BRANCH | `OP_CMPEQ | `OP_COMPCOND; inst_type <= `IMMINST; end
+            `BGEZ:      begin control_sig <= `OP_BRANCH | `OP_TESTNEG | `OP_COMPCOND; inst_type <= `IMMINST; end
             
             // Jump Instructions
-            `J:         begin control_sig <= 0;                                     inst_type <= `JMPINST; end
+            `J:         begin control_sig <= `OP_JUMP;                                     inst_type <= `JMPINST; end
             
             default:    begin control_sig <= 0; inst_type <= `REGINST; end
         endcase
@@ -151,7 +152,7 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, NextPCIn, RdEx, RdMem, RdW
                                 end
                             else
                                 begin
-                                    Op2 <= immediate;
+                                    Op2 <= {4'b0, Instruction[25:0], 2'b00};
                                     Control [31] <= 0;  // WriteBack Reg
                                     Dst <= dst_reg;
                                 end
@@ -167,6 +168,6 @@ module IDECODE(Reset, Clk, Instruction, Regfile_flat, NextPCIn, RdEx, RdMem, RdW
 	
     assign stall_sig = RdEx[rs] | RdEx[rt] | RdMem[rs] | RdMem[rt] | RdWb[rs] | RdWb[rt];
     assign Stall = stall_sig;
-    assign UnconditionalBranch = (inst_type==`JMPINST)?1:0; // !Reset & Uncon branch detected
+    assign UnconditionalBranch = 0; // TODOL remove this signal because from now on even unconditional jumps will go to the ex stage (inst_type==`JMPINST)?1:0; // !Reset & Uncon branch detected
     assign UnconditionalBranchTarget = {4'b0, Instruction[25:0], 2'b00};
 endmodule

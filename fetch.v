@@ -39,10 +39,13 @@ module IFETCH(Reset, Clk, Inst, Stall, BranchTaken, IRead, Fetched, Flush);
 
     always @ (posedge Clk)
     begin
-        if ( (Reset == 1) | (Flush == 1) | BranchTaken)
+        if ( (Reset == 1) | (Flush == 1) )
             Fetched <= 0;
-        else if(Stall == 0)
-            Fetched <= iread;
+        else if(Stall == 0)                 // If we're stalled just keep pumping the old instruction because we know the decode stage won't move forward anyway
+            if(!BranchTaken)                
+                Fetched <= iread;
+            else
+                Fetched <= 0;               // If we're not stalled but branch is taken means there is already an instruction on the input that we need to discard so issue a NOP instead
     end
 
 endmodule

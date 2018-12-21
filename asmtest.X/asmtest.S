@@ -7,6 +7,43 @@
 #define count $5
 #define one  $6
 asmtest:
+bgez_test:
+    lui     $1, 0x1111
+    ori     $1, 0x1111
+    bgez    $1, b1
+    lui     $2, 0x2222
+    ori     $2, 0x2222
+b1:
+    lui     $10, 0xABCD
+    ori     $10, 0xEF01
+    bgez    $10, b2
+    lui     $3, 0x3333
+    ori     $3, 0x3333
+b2:
+    lui     $11, 0
+    bgez    $11, b3
+    lui     $4, 0x4444
+    ori     $4, 0x4444
+b3:
+    lui     $5, 0x5555
+    ori     $5, 0x5555
+beq_test:
+    lui     $1, 0x1234
+    beq     $0, $0, beqlbl
+    lui     $2, 0xAAAA
+    ori     $2, 0xBBBB
+beqlbl:
+    lui     $3, 0xAAAA
+    ori     $3, 0xBBBB
+jump_test:
+    lui     $1, 0x1234
+    addi    $1, 0x5
+    j       ja
+    lui     $2, 0xAAAA
+    ori     $2, 0xBBBB
+ja:
+    lui     $3, 0xABCD
+    ori     $3, 0xEF01
 delay_slot_test:
     lui     $1, 0x1234
     ori     $1, 0x5678
